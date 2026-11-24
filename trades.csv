@@ -1,4 +1,0 @@
-tradeId,timestamp,symbol,buyOrderId,sellOrderId,price,quantity
-1,2026-11-10 22:29:00.168,INFY,4,1,101,50
-2,2026-11-10 22:29:00.168,INFY,4,2,101,30
-3,2026-11-10 22:29:00.168,INFY,4,3,102,20
