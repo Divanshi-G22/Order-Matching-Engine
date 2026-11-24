@@ -15,11 +15,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * Matches incoming orders against the resting book using price-time priority.
+ * Trades execute at the resting order's price. Single-threaded by design.
+ */
 public class MatchingEngine {
     private final Map<String, OrderBook> books = new HashMap<>();
     private final List<Trade> tradeLog = new ArrayList<>();
-    private final Map<Long, String> restingSymbol = new HashMap<>(); // order id -> symbol
+    private final Map<Long, String> restingSymbol = new HashMap<>(); // order id -> symbol, for cancel
+    private final List<EngineListener> listeners = new ArrayList<>();
 
+    public void addListener(EngineListener listener) {
+        listeners.add(listener);
+    }
+
+    /** Submits an order and returns the trades it produced (possibly empty). */
     public List<Trade> submit(Order in) {
         if (in == null) throw new InvalidOrderException("Order must not be null");
 
@@ -54,21 +64,26 @@ public class MatchingEngine {
 
         if (in.getRemaining() > 0) {
             if (in.type == OrderType.LIMIT) {
-                book.add(in);
+                book.add(in);                       // leftover waits in the book
                 restingSymbol.put(in.id, in.symbol);
             } else {
-                in.cancel();   // market order: unfilled remainder is dropped
+                in.cancel();                        // market order: unfilled remainder is dropped
             }
         }
 
         tradeLog.addAll(trades);
+        for (Trade t : trades)
+            for (EngineListener l : listeners) l.onTrade(t);
+        for (EngineListener l : listeners) l.onBookChanged(in.symbol);
         return trades;
     }
 
+    /** Cancels a resting order by id. */
     public void cancel(long orderId) {
         String symbol = restingSymbol.remove(orderId);
         if (symbol == null || !books.get(symbol).cancel(orderId))
             throw new OrderNotFoundException("No resting order with id " + orderId);
+        for (EngineListener l : listeners) l.onBookChanged(symbol);
     }
 
     private boolean crosses(Order in, long levelPrice) {
