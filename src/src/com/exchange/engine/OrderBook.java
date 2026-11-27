@@ -4,9 +4,11 @@ import com.exchange.model.Order;
 import com.exchange.model.Side;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -54,6 +56,22 @@ public class OrderBook {
         int total = 0;
         for (Order o : q) total += o.getRemaining();
         return total;
+    }
+
+    
+    public List<Object[]> levels(Side side) {
+        List<Object[]> rows = new ArrayList<>();
+        for (Map.Entry<Long, Deque<Order>> e : sideOf(side).entrySet()) {
+            long total = 0;
+            StringBuilder ids = new StringBuilder();
+            for (Order o : e.getValue()) {
+                total += o.getRemaining();
+                if (ids.length() > 0) ids.append("  ");
+                ids.append('#').append(o.id).append('/').append(o.getRemaining());
+            }
+            rows.add(new Object[]{e.getKey(), total, ids.toString()});
+        }
+        return rows;
     }
 
     public String print() {
