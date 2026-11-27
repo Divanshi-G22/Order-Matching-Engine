@@ -1,5 +1,3 @@
-# Order-Matching-Engine
-
 # Order Matching Engine (Stock Exchange Simulator)
 
 A core Java simulator of how an exchange matches buy and sell orders using price-time priority.
